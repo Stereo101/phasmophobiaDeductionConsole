@@ -8,7 +8,7 @@ class Mission():
 		
 		self.ghostInfo = {
 			"banshee":"Will exclusively hunt one player until they die.",
-			"demon":"Attacks often. SUCCESSFUL quiests on the Ouija board will not decrease sanity.",
+			"demon":"Attacks often. SUCCESSFUL questions on the Ouija board will not decrease sanity.",
 			"jinn":"Interacts with electronics (lights/cars/phones/radios/tvs) often. Moves very fast in hunts if fuse box in on. Low activity if players avoid ghost room.",
 			"mare":"Will attack more often in dark and less often in light. Likes to turn off lights and the fuse box.",
 			"phantom":"Can copy the appearance of a team member on hunts/manifestations (will never appear holding an item). Drops sanity rapidly when seen. Likes manifesting to stand still or walk for a moment. Photos cause the phantom to disappear (not stop a hunt).",
@@ -23,11 +23,11 @@ class Mission():
 	
 	def makeDicts():
 		clueDict = {"emf":{"shade","phantom","jinn","banshee","revenant","oni"},
-					"temps":{"phantom","yurei","mare","demon","banshee","wraith"},
+					"temp":{"phantom","yurei","mare","demon","banshee","wraith"},
 					"box":{"jinn","mare","demon","oni","poltergeist","spirit","wraith"},
 					"prints":{"banshee","revenant","poltergeist","spirit","wraith"},
 					"orbs":{"phantom","shade","jinn","yurei","mare","poltergeist"},
-					"writing":{"shade","yurei","demon","revenant","oni","spirit"}
+					"book":{"shade","yurei","demon","revenant","oni","spirit"}
 				}
 			
 		ghostDict = {}
@@ -97,11 +97,12 @@ class Mission():
 			print("Known clues %s" % self.foundClues)
 			
 	def showHelp(self):
-		print("Commands: reset info clues ghosts help quirks about")
+		print("Commands: reset info clues ghosts help quirks questions about")
 		print("\treset: remove all clues")
 		print("\tinfo: show remaining <ghost,clue> pairs")
 		print("\tghosts: show traits of remaining ghosts")
 		print("\tclues: show remaining/entered/impossible clues")
+		print("\tquestions: show valid questions to ask Ouija Board")
 		print("\tabout: about this program")
 		print("Type clues like this:",self.clueSet)
 		print("Entering a clue a second time will remove it")
@@ -113,10 +114,17 @@ class Mission():
 			
 			self.widthAwarePrint(self.ghostInfo[g])
 			print("-"*25)
-			
-	def showAbout(self):
+	def showQuestions(self):
 		self.widthAwarePrint(
-		
+"""How old are you?
+Who did you kill?
+How long have you been dead?
+How many people are in this room?
+Where is your room?
+""")
+
+	def showAbout(self):
+		self.widthAwarePrint(		
 """Phasmophobia Deduction Console is designed to automate deduction of remaining clues and possible ghosts. Find what clues are still possible, and what ghost behaviors you should look for.
 		
 Based on v0.174 (10/25/2020)
@@ -163,14 +171,14 @@ Information sourced from phasmophobia.fandom.com""")
 					
 			elif(cmd == "reset"):
 				self.reset()
-				
 			elif(cmd == "info"):
 				self.showInfo()
-				
 			elif(cmd == "clues"):
 				self.showClueInfo()
 			elif(cmd == "ghosts"):
 				self.showQuirks()
+			elif(cmd == "questions"):
+				self.showQuestions()
 			elif(cmd == "help"):
 				self.showHelp()
 			elif(cmd == "about"):
