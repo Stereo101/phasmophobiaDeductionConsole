@@ -1,6 +1,7 @@
 class Mission():
 	def __init__(self):
 		self.foundClues = set()
+		self.discountedClues = set()
 		self.clueDict,self.ghostDict = Mission.makeDicts()
 		
 		self.clueSet = set(self.clueDict.keys())
@@ -50,20 +51,27 @@ class Mission():
 		
 	def removeClue(self,clue):
 		self.foundClues.remove(clue)
+	
+	def isDiscounted(self,clue):
+		return clue in self.discountedClues
+		
+	def discountClue(self,clue):
+		self.discountedClues.add(clue)
+		
+	def recountClue(self,clue):
+		self.discountedClues.remove(clue)
 		
 	def reset(self):
 		self.foundClues = set()
+		self.discountedClues = set()
 		
 	def getPossibleGhosts(self):
-		if(len(self.foundClues) == 0):
-			return self.ghostSet
-		
-		r = None
+		r = self.ghostSet
 		for clue in self.foundClues:
-			if(r is None):
-				r = self.clueDict[clue]
-			else:
 				r = r.intersection(self.clueDict[clue])
+				
+		for clue in self.discountedClues:
+				r = r - self.clueDict[clue]
 		return set(r)
 		
 	def getGhostClues(self):
@@ -88,13 +96,16 @@ class Mission():
 		possible = self.getRemainingClues()
 		if(possible):
 			print("Possible Remaining clues %s" % possible)
-		impossible = self.clueSet - possible - self.foundClues
+		impossible = self.clueSet - possible - self.foundClues - self.discountedClues
 		
 		if(impossible):
 			print("Impossible clues %s" % (impossible))
-		
+		if(self.discountedClues):
+			print("Discounted clues %s" % self.discountedClues)
 		if(self.foundClues):
 			print("Known clues %s" % self.foundClues)
+			
+		
 			
 	def showHelp(self):
 		print("Commands: reset info clues ghosts help quirks questions about")
@@ -102,10 +113,12 @@ class Mission():
 		print("\tinfo: show remaining <ghost,clue> pairs")
 		print("\tghosts: show traits of remaining ghosts")
 		print("\tclues: show remaining/entered/impossible clues")
-		print("\tquestions: show valid questions to ask Ouija Board")
+		print("\tquestions: show some valid questions to ask Ouija Board")
 		print("\tabout: about this program")
-		print("Type clues like this:",self.clueSet)
-		print("Entering a clue a second time will remove it")
+		print("Mark clues by typing them in:",self.clueSet)
+		print("Reentering a found clue a second time will remove it")
+		print("Prefixing a clue with a ! will manually discount that clue")
+		print("Reentering a discounted clue will make it possible again")
 		
 	def showQuirks(self):
 		ghostClues = self.getGhostClues()
@@ -153,7 +166,13 @@ Information sourced from phasmophobia.fandom.com""")
 		self.showClueInfo()
 		while True:
 			cmd = input(f"\n({len(self.foundClues)}/3)>").strip().lower()
+			
+			#Mark a clue
 			if(self.validClue(cmd)):
+				if(self.isDiscounted(cmd)):
+					print(f"{cmd} is no longer discounted.")
+					self.recountClue(cmd)
+					
 				if(self.hasClue(cmd)):
 					self.removeClue(cmd)
 					print(f"{cmd} removed from clues.")
@@ -166,9 +185,40 @@ Information sourced from phasmophobia.fandom.com""")
 					self.showInfo()
 					print()
 					self.showClueInfo()
+				
 				else:
 					print(f"{cmd} is an impossible clue.")
-					
+			
+			#Discount a clue
+			elif(len(cmd) >= 1 and cmd[0] == "!"):
+				clue = cmd.split("!",1)[1]
+				if(self.validClue(clue)):
+					if(self.hasClue(clue)):
+						print(f"{clue} was marked as found, and is unmarked and discounted.")
+						self.removeClue(clue)
+						self.discountClue(clue)
+						self.showInfo()
+						print()
+						self.showClueInfo()
+						
+					elif(self.isDiscounted(clue)):
+						print(f"{clue} is no longer discounted.")
+						self.recountClue(clue)
+						self.showInfo()
+						print()
+						self.showClueInfo()
+						
+					elif(clue in self.getRemainingClues()):
+						print(f"{clue} is now discounted.")
+						self.discountClue(clue)
+						self.showInfo()
+						print()
+						self.showClueInfo()
+					else:
+						print(f"{clue} is already impossible.")
+				else:
+					print("Unknown command, type 'help'")
+				
 			elif(cmd == "reset"):
 				self.reset()
 			elif(cmd == "info"):
