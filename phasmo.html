@@ -110,8 +110,6 @@
 		background: transparent;
 	}
 	
-	
-	
 	header {
 		position: sticky;
 		top: 0;
@@ -126,7 +124,7 @@
 		
 	}
 	
-	.buttonRow > .clueButton {
+	.clueButton {
 		background-color: gray;
 		font-family: Impact;
 		font-size: 24px;
@@ -141,9 +139,23 @@
 		flex-grow:1;
 	}
 	
-	.buttonRow > .clueButton:hover {
+	.clueButton:hover {
 		color: white;
 	}
+	
+	.clueButton.highlight {
+		background-color: teal;
+	}
+	
+	.clueButton.on {
+		background-color: lightblue;
+	}
+	
+	.clueButton.off {
+		background-color: darkred;
+	}
+	
+	
 	
 	.ghostBar {
 		display: block;
@@ -151,7 +163,7 @@
 		font-family: san-serif;
 		font-size: 20px;
 		text-align:center;
-		margin: 20px;
+		margin: 10px;
 		user-select: none;
 		
 		cursor: pointer;
@@ -177,7 +189,8 @@
 		background-color: #555;
 	}
 	
-	.highlight {
+	
+	.ghostBar.highlight {
 		background-color: #301934;
 	}
 	
@@ -217,7 +230,7 @@
 	for(i = 0; i < buttons.length; i++) {
 		buttons[i].addEventListener("click", function() {toggleClue(this.id)});
 		
-		//highlight ghosts which apply
+		//add ghost highlight on mouse over clue
 		buttons[i].addEventListener("mouseover", function() {
 			let clue = this.id;
 			if(possibleClues.has(clue)) {
@@ -227,7 +240,7 @@
 				}
 			}
 		});
-		
+		//remove ghost highlights on mouse off clue
 		buttons[i].addEventListener("mouseleave", function() {
 			let clue = this.id;
 			if(possibleClues.has(clue)) {
@@ -239,9 +252,11 @@
 		});
 	}
 	
-	//add listener to ghost collapses
+	
+	
 	var ghostBars = document.getElementsByClassName("ghostBar");
 	for(i = 0; i<ghostBars.length; i++) {
+		//add listener to ghost collapses
 		ghostBars[i].addEventListener("click",function() {
 			this.classList.toggle("active");
 			var content = this.firstElementChild;
@@ -249,6 +264,22 @@
 				content.style.display = "none";
 			} else {
 				content.style.display = "block";
+			}
+		});
+		
+		//add clue highlight on mouse over ghost
+		ghostBars[i].addEventListener("mouseover",function() {
+			for(let clue of ghostDict[this.id]) {
+				var content = document.getElementById(clue);
+				content.classList.add("highlight");
+			}
+		});
+		
+		//remove clue highlight on mouse off ghost
+		ghostBars[i].addEventListener("mouseleave",function() {
+			for(let clue of ghostDict[this.id]) {
+				var content = document.getElementById(clue);
+				content.classList.remove("highlight");
 			}
 		});
 	}
@@ -311,11 +342,12 @@
 		for (let clue in clueDict) {
 			var obj = document.getElementById(clue);
 			if(selectedClues.has(clue)) {
-				obj.style.backgroundColor = "lightblue";
+				obj.classList.add("on");
 			} else if(possibleClues.has(clue)) {
-				obj.style.backgroundColor = "gray";				
+				obj.classList.remove("off");
+				obj.classList.remove("on");
 			} else {
-				obj.style.backgroundColor = "red";
+				obj.classList.add("off");
 			}
 		}
 	}
