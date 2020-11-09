@@ -176,6 +176,12 @@
 	.active, .ghostBar:hover {
 		background-color: #555;
 	}
+	
+	.highlight {
+		background-color: #301934;
+	}
+	
+	
 </style>
 
 <script>
@@ -210,6 +216,27 @@
 	var i;
 	for(i = 0; i < buttons.length; i++) {
 		buttons[i].addEventListener("click", function() {toggleClue(this.id)});
+		
+		//highlight ghosts which apply
+		buttons[i].addEventListener("mouseover", function() {
+			let clue = this.id;
+			if(possibleClues.has(clue)) {
+				for(let ghost of clueDict[clue]) {
+					var content = document.getElementById(ghost);
+					content.classList.add("highlight");
+				}
+			}
+		});
+		
+		buttons[i].addEventListener("mouseleave", function() {
+			let clue = this.id;
+			if(possibleClues.has(clue)) {
+				for(let ghost of clueDict[clue]) {
+					var content = document.getElementById(ghost);
+					content.classList.remove("highlight");
+				}
+			}
+		});
 	}
 	
 	//add listener to ghost collapses
