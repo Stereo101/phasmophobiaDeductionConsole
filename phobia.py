@@ -7,6 +7,20 @@ class Mission():
 		self.clueSet = set(self.clueDict.keys())
 		self.ghostSet = set(self.ghostDict.keys())
 		
+		self.clueSyns = {"emf":["e","emf5"],
+					"temp":["t","temps","freezing","freeze","cold","breath"],
+					"box":["x","speech","talking"],
+					"prints":["p","print","hand","finger"],
+					"orbs":["o","orb","balls"],
+					"book":["b","writing","write"]}
+					
+		rClueSyns = {}
+		for clue,syns in self.clueSyns.items():
+			for s in syns:
+				rClueSyns[s] = clue
+		self.rClueSyns = rClueSyns
+		
+		
 		self.ghostInfo = {
 			"banshee":"Will exclusively hunt one player until they die.",
 			"demon":"Attacks often. SUCCESSFUL questions on the Ouija board will not decrease sanity.",
@@ -30,7 +44,8 @@ class Mission():
 					"orbs":{"phantom","shade","jinn","yurei","mare","poltergeist"},
 					"book":{"shade","yurei","demon","revenant","oni","spirit"}
 				}
-			
+				
+		
 		ghostDict = {}
 		for clue,gList in clueDict.items():
 			for ghost in gList:
@@ -41,7 +56,13 @@ class Mission():
 		return clueDict,ghostDict
 		
 	def validClue(self,clue):
-		return clue in self.clueSet
+		return clue in self.clueSet or clue in self.rClueSyns
+		
+	def getClueFromSyn(self,clue):
+		if clue in self.clueSet:
+			return clue
+		else:
+			return self.rClueSyns[clue]
 		
 	def hasClue(self,clue):
 		return clue in self.foundClues
@@ -90,20 +111,26 @@ class Mission():
 	
 	def showInfo(self):
 		for ghost, clues in self.getGhostClues().items():
-			print("%12s => %s" % (ghost, clues))
+			if(len(clues) > 0):
+				print("%12s => %s" % (ghost, pSortedSet(clues)))
+			else:
+				l = len(ghost)
+				print("***%s*************" % ("*"*l))
+				print("***%s confirmed***" % (ghost))
+				print("***%s*************" % ("*"*l))
 			
 	def showClueInfo(self):
 		possible = self.getRemainingClues()
 		if(possible):
-			print("Possible Remaining clues %s" % possible)
+			print("Possible Remaining clues %s" % pSortedSet(possible))
 		impossible = self.clueSet - possible - self.foundClues - self.discountedClues
 		
 		if(impossible):
-			print("Impossible clues %s" % (impossible))
+			print("Impossible clues %s" % pSortedSet((impossible)))
 		if(self.discountedClues):
-			print("Discounted clues %s" % self.discountedClues)
+			print("Discounted clues %s" % pSortedSet(self.discountedClues))
 		if(self.foundClues):
-			print("Known clues %s" % self.foundClues)
+			print("Known clues %s" % pSortedSet(self.foundClues))
 			
 		
 			
@@ -115,15 +142,17 @@ class Mission():
 		print("\tclues: show remaining/entered/impossible clues")
 		print("\tquestions: show some valid questions to ask Ouija Board")
 		print("\tabout: about this program")
+		print("\tsyn: show alternate ways to type clues")
 		print("Mark clues by typing them in:",self.clueSet)
 		print("Reentering a found clue a second time will remove it")
 		print("Prefixing a clue with a ! will manually discount that clue")
 		print("Reentering a discounted clue will make it possible again")
+		print("Typing multiple commands separated by spaces will execute")
 		
 	def showQuirks(self):
 		ghostClues = self.getGhostClues()
 		for g in sorted(self.getPossibleGhosts()):
-			print("%12s: %s" % (g,ghostClues[g]))
+			print("%12s: %s" % (g,pSortedSet(ghostClues[g])))
 			
 			self.widthAwarePrint(self.ghostInfo[g])
 			print("-"*25)
@@ -160,83 +189,97 @@ Information sourced from phasmophobia.fandom.com""")
 				print(w,end=" ")
 				usedWidth += wLen
 			print()
-		
+	def showSyn(self):
+		for clue,syns in self.clueSyns.items():
+			print("%8s => %s"% (clue,pSortedSet(syns)))
 	def repl(self):
 		self.showInfo()
+		print()
 		self.showClueInfo()
 		while True:
-			cmd = input(f"\n({len(self.foundClues)}/3)>").strip().lower()
+			print()
+			print("#"*30)
+			rawInput = input(f"\n({len(self.foundClues)}/3)>").strip().lower()
+			cmdList = rawInput.split(" ")
+			if(cmdList[0] == ""):
+				cmdList.pop()
+			while len(cmdList) > 0:
+				cmd = cmdList.pop(0)
+				print(f"\n------({cmd})------")
 			
-			#Mark a clue
-			if(self.validClue(cmd)):
-				if(self.isDiscounted(cmd)):
-					print(f"{cmd} is no longer discounted.")
-					self.recountClue(cmd)
+				#Mark a clue
+				if(self.validClue(cmd)):
+					cmd = self.getClueFromSyn(cmd)
+					if(self.isDiscounted(cmd)):
+						print(f"{cmd} is no longer discounted.")
+						self.recountClue(cmd)
+						
+					if(self.hasClue(cmd)):
+						self.removeClue(cmd)
+						print(f"{cmd} removed from clues.")
+					elif(cmd in self.getRemainingClues()):
+						self.addClue(cmd)
+						print(f"{cmd} added to clues.")
 					
-				if(self.hasClue(cmd)):
-					self.removeClue(cmd)
-					print(f"{cmd} removed from clues.")
-					self.showInfo()
-					print()
-					self.showClueInfo()
-				elif(cmd in self.getRemainingClues()):
-					self.addClue(cmd)
-					print(f"{cmd} added to clues.")
-					self.showInfo()
-					print()
-					self.showClueInfo()
-				
-				else:
-					print(f"{cmd} is an impossible clue.")
-			
-			#Discount a clue
-			elif(len(cmd) >= 1 and cmd[0] == "!"):
-				clue = cmd.split("!",1)[1]
-				if(self.validClue(clue)):
-					if(self.hasClue(clue)):
-						print(f"{clue} was marked as found, and is unmarked and discounted.")
-						self.removeClue(clue)
-						self.discountClue(clue)
-						self.showInfo()
-						print()
-						self.showClueInfo()
-						
-					elif(self.isDiscounted(clue)):
-						print(f"{clue} is no longer discounted.")
-						self.recountClue(clue)
-						self.showInfo()
-						print()
-						self.showClueInfo()
-						
-					elif(clue in self.getRemainingClues()):
-						print(f"{clue} is now discounted.")
-						self.discountClue(clue)
-						self.showInfo()
-						print()
-						self.showClueInfo()
 					else:
-						print(f"{clue} is already impossible.")
-				else:
-					print("Unknown command, type 'help'")
+						print(f"{cmd} is an impossible clue.")
 				
-			elif(cmd == "reset"):
-				self.reset()
-			elif(cmd == "info"):
-				self.showInfo()
-			elif(cmd == "clues"):
-				self.showClueInfo()
-			elif(cmd == "ghosts"):
-				self.showQuirks()
-			elif(cmd == "questions"):
-				self.showQuestions()
-			elif(cmd == "help"):
-				self.showHelp()
-			elif(cmd == "about"):
-				self.showAbout()
-			else:
-				print("Unknown command, type 'help'")
-				
+				#Discount a clue
+				elif(len(cmd) >= 1 and cmd[0] == "!"):
+					clue = cmd.split("!",1)[1]
 					
+					if(self.validClue(clue)):
+						clue = self.getClueFromSyn(clue)
+						if(self.hasClue(clue)):
+							print(f"{clue} was marked as found, and is unmarked and discounted.")
+							self.removeClue(clue)
+							self.discountClue(clue)
+							
+						elif(self.isDiscounted(clue)):
+							print(f"{clue} is no longer discounted.")
+							self.recountClue(clue)
+							
+						elif(clue in self.getRemainingClues()):
+							print(f"{clue} is now discounted.")
+							self.discountClue(clue)
+							
+						else:
+							print(f"{clue} is already impossible.")
+					else:
+						print(f"Unknown clue '{clue}', type 'help'")
+						if(len(cmdList) > 0):
+							print("Stopping chain execution. ('%s') not executed" % ("', '".join(cmdList)))
+						break
+					
+				elif(cmd == "reset"):
+					self.reset()
+				elif(cmd == "info"):
+					self.showInfo()
+				elif(cmd == "clues"):
+					self.showClueInfo()
+				elif(cmd == "ghosts"):
+					self.showQuirks()
+				elif(cmd == "questions"):
+					self.showQuestions()
+				elif(cmd == "help"):
+					self.showHelp()
+				elif(cmd == "about"):
+					self.showAbout()
+				elif(cmd == "syn"):
+					self.showSyn()
+				else:
+					print(f"Unknown command '{cmd}', type 'help'")
+					if(len(cmdList) > 0):
+						print("Stopping chain execution. ('%s') not executed" % ("', '".join(cmdList)))
+					break
+			print()
+			self.showInfo()
+			print()
+			self.showClueInfo()
+			
+def pSortedSet(set):
+	return "(%s)" % (", ".join(sorted(list(set))))
+	
 def main():
 	m = Mission()
 	m.repl()
