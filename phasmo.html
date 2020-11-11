@@ -207,7 +207,7 @@
 	
 	var selectedClues = new Set();
 	var possibleClues = new Set();
-	
+	var ghostInfoGlobalCollapse = true;
 	
 	
 	
@@ -283,6 +283,54 @@
 			}
 		});
 	}
+	
+	
+	//add keyboard controls
+	
+	window.onkeydown = function(k) {
+		if(k.keyCode == 32) {
+			if(ghostInfoGlobalCollapse) {
+				for(let ghost in ghostDict) {
+					var ghostInfo = document.getElementById(ghost);
+					ghostInfo.classList.add("active");
+					var content = ghostInfo.firstElementChild;
+					content.style.display = "block";
+				}
+			} else {
+				for(let ghost in ghostDict) {
+					var ghostInfo = document.getElementById(ghost);
+					ghostInfo.classList.remove("active");
+					var content = ghostInfo.firstElementChild;
+					content.style.display = "none";  
+				}
+			}
+			ghostInfoGlobalCollapse = !ghostInfoGlobalCollapse;
+			k.preventDefault();
+			return False;
+		} else {
+			return True;
+		}
+	}
+	document.addEventListener("keydown",handleKeyPress);
+	
+	function handleKeyPress(keyPress) {
+		k = keyPress.keyCode;
+		console.log(k);
+		if(k == 49) {
+			toggleClue("emf");
+		} else if (k == 50) {
+			toggleClue("prints");
+		} else if (k == 51) {
+			toggleClue("temp");
+		} else if (k == 52) {
+			toggleClue("orbs");
+		} else if (k == 53) {
+			toggleClue("book");
+		} else if (k == 54) {
+			toggleClue("box");
+		}
+	}
+	
 	
 	function toggleClue(clue) {
 		if(possibleClues.has(clue)) {
